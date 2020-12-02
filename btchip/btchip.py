@@ -647,6 +647,29 @@ class btchip:
 		apdu.extend(data)
 		return self.dongle.exchange(bytearray(apdu))
 
+# Functions dedicated to the Bitcoin Vault (BTCV) 3 Keys feature
+
+	def setBTCVPassword(self, password, passwordType):
+		if passwordType != btchip.BTCV_PASSWORD_INSTANT \
+			and passwordType != btchip.BTCV_PASSWORD_RECOVERY:
+			raise BTChipException("Invalid BTCV password type")
+
+		apdu = [ self.BTCHIP_CLA, self.BTCHIP_INS_BTCV_SET_PASSWORD, passwordType, 0x00 ]
+		apdu.append(len(password))
+		apdu.extend(bytearray(password))
+		self.dongle.exchange(bytearray(apdu))
+
+	def setBTCVPasswordUse(self, passwordHash, txType):
+		if txType != btchip.BTCV_TX_ALERT \
+			and txType != btchip.BTCV_TX_INSTANT \
+			and txType != btchip.BTCV_TX_RECOVERY:
+			raise BTChipException("Invalid BTCV transaction type")
+
+		apdu = [ self.BTCHIP_CLA, self.BTCHIP_INS_BTCV_USE_PASSWORD, txType, 0x00 ]
+		apdu.append(len(passwordHash))
+		apdu.extend(bytearray(passwordHash))
+		self.dongle.exchange(bytearray(apdu))
+
 # Functions dedicated to the Java Card interface when no proprietary API is available
 
 	def parse_bip32_path_internal(self, path):
