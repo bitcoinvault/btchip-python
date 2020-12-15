@@ -33,11 +33,11 @@ app.setBTCVPasswordUse(instantPasswordHash, btchip.BTCV_TX_INSTANT)
 app.setBTCVPasswordUse(recoveryPasswordHash, btchip.BTCV_TX_RECOVERY)
 
 # Get new account
-address = eval(app.getWalletPublicKey("0'/0/0", btcvAddr=True)['address'])
+address = app.getWalletPublicKey("0'/0/0", btcvAddr=True)['address']
 assert address.decode("utf-8")[0] == 'R'
 
 # Get new accounts
 addresses = app.getWalletPublicKeyBatch(["0'/0/0", "0'/0/1"], btcvAddr=True)
 assert len(addresses) == 2
 for address in addresses:
-    assert eval(address['address']).decode("utf-8")[0] == 'R'
+    assert address['address'].decode("utf-8")[0] == 'R'

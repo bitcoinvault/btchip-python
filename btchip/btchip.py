@@ -139,7 +139,7 @@ class btchip:
 		offset = 0
 		result['publicKey'] = response[offset + 1 : offset + 1 + response[offset]]
 		offset = offset + 1 + response[offset]
-		result['address'] = str(response[offset + 1 : offset + 1 + response[offset]])
+		result['address'] = response[offset + 1 : offset + 1 + response[offset]]
 		offset = offset + 1 + response[offset]
 		result['chainCode'] = response[offset : offset + 32]
 		return result
