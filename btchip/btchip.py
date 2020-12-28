@@ -662,7 +662,7 @@ class btchip:
 
 		apdu = [ self.BTCHIP_CLA, self.BTCHIP_INS_BTCV_SET_PASSWORD, passwordType, 0x00 ]
 		apdu.append(len(password))
-		apdu.extend(bytearray(password))
+		apdu.extend(bytearray(password, encoding='utf8'))
 		self.dongle.exchange(bytearray(apdu))
 
 	def setBTCVPasswordUse(self, passwordHash, txType):
