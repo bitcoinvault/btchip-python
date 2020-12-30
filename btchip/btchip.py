@@ -128,12 +128,15 @@ class btchip:
 			result.append(self.getWalletPublicKey(path, False, segwit, segwitNative, cashAddr, btcvAddr))
 		return result
 
-	def getWalletPublicKey(self, path, showOnScreen=False, segwit=False, segwitNative=False, cashAddr=False, btcvAddr=True):
+	def getWalletPublicKey(self, path, showOnScreen=False, segwit=False, segwitNative=False, cashAddr=False, btcvAddr=True, btcvPubkeyTree=BTCV_TX_ALERT):
 		result = {}
 		donglePath = parse_bip32_path(path)
 		if self.needKeyCache:
-			self.resolvePublicKeysInPath(path)			
-		apdu = [ self.BTCHIP_CLA, self.BTCHIP_INS_GET_WALLET_PUBLIC_KEY, 0x01 if showOnScreen else 0x00, 0x04 if btcvAddr else 0x03 if cashAddr else 0x02 if segwitNative else 0x01 if segwit else 0x00, len(donglePath) ]
+			self.resolvePublicKeysInPath(path)
+		p2 = 0x04 if btcvAddr else 0x03 if cashAddr else 0x02 if segwitNative else 0x01 if segwit else 0x00
+		if btcvAddr:
+			p2 = p2 | (btcvPubkeyTree << 4)
+		apdu = [ self.BTCHIP_CLA, self.BTCHIP_INS_GET_WALLET_PUBLIC_KEY, 0x01 if showOnScreen else 0x00, p2 , len(donglePath) ]
 		apdu.extend(donglePath)
 		response = self.dongle.exchange(bytearray(apdu))
 		offset = 0
