@@ -44,9 +44,3 @@ pubkey2 = result['publicKey']
 assert address2.decode("utf-8")[0] == 'R'
 assert address2 == address1
 assert pubkey2 != pubkey1
-
-# Get new accounts
-addresses = app.getWalletPublicKeyBatch(["0'/0/0", "0'/0/1"], btcvAddr=True)
-assert len(addresses) == 2
-for address in addresses:
-    assert address['address'].decode("utf-8")[0] == 'R'

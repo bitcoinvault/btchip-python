@@ -122,12 +122,6 @@ class btchip:
 				return e.sw - 0x63c0
 			raise e
 
-	def getWalletPublicKeyBatch(self, paths, segwit=False, segwitNative=False, cashAddr=False, btcvAddr=True):
-		result = []
-		for path in paths:
-			result.append(self.getWalletPublicKey(path, False, segwit, segwitNative, cashAddr, btcvAddr))
-		return result
-
 	def getWalletPublicKey(self, path, showOnScreen=False, segwit=False, segwitNative=False, cashAddr=False, btcvAddr=True, btcvPubkeyTree=BTCV_TX_ALERT):
 		result = {}
 		donglePath = parse_bip32_path(path)
