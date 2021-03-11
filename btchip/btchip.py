@@ -55,6 +55,8 @@ class btchip:
 	BTCHIP_INS_GET_FIRMWARE_VERSION = 0xc4
 	BTCHIP_INS_COMPOSE_MOFN_ADDRESS = 0xc6
 	BTCHIP_INS_GET_POS_SEED = 0xca
+	BTCHIP_INS_BTCV_SET_PASSWORD = 0xd8
+	BTCHIP_INS_BTCV_USE_PASSWORD = 0xd9
 
 	BTCHIP_INS_EXT_GET_HALF_PUBLIC_KEY = 0x20
 	BTCHIP_INS_EXT_CACHE_PUT_PUBLIC_KEY = 0x22
@@ -65,6 +67,12 @@ class btchip:
 	OPERATION_MODE_RELAXED_WALLET = 0x02 
 	OPERATION_MODE_SERVER = 0x04
 	OPERATION_MODE_DEVELOPER = 0x08
+
+	BTCV_PASSWORD_INSTANT = 0x00
+	BTCV_PASSWORD_RECOVERY = 0x01
+	BTCV_TX_ALERT = 0x00
+	BTCV_TX_INSTANT = 0x01
+	BTCV_TX_RECOVERY = 0x02
 
 	FEATURE_UNCOMPRESSED_KEYS = 0x01
 	FEATURE_RFC6979 = 0x02
@@ -114,18 +122,21 @@ class btchip:
 				return e.sw - 0x63c0
 			raise e
 
-	def getWalletPublicKey(self, path, showOnScreen=False, segwit=False, segwitNative=False, cashAddr=False):
+	def getWalletPublicKey(self, path, showOnScreen=False, segwit=False, segwitNative=False, cashAddr=False, btcvAddr=True, btcvPubkeyTree=BTCV_TX_ALERT):
 		result = {}
 		donglePath = parse_bip32_path(path)
 		if self.needKeyCache:
-			self.resolvePublicKeysInPath(path)			
-		apdu = [ self.BTCHIP_CLA, self.BTCHIP_INS_GET_WALLET_PUBLIC_KEY, 0x01 if showOnScreen else 0x00, 0x03 if cashAddr else 0x02 if segwitNative else 0x01 if segwit else 0x00, len(donglePath) ]
+			self.resolvePublicKeysInPath(path)
+		p2 = 0x04 if btcvAddr else 0x03 if cashAddr else 0x02 if segwitNative else 0x01 if segwit else 0x00
+		if btcvAddr:
+			p2 = p2 | (btcvPubkeyTree << 4)
+		apdu = [ self.BTCHIP_CLA, self.BTCHIP_INS_GET_WALLET_PUBLIC_KEY, 0x01 if showOnScreen else 0x00, p2 , len(donglePath) ]
 		apdu.extend(donglePath)
 		response = self.dongle.exchange(bytearray(apdu))
 		offset = 0
 		result['publicKey'] = response[offset + 1 : offset + 1 + response[offset]]
 		offset = offset + 1 + response[offset]
-		result['address'] = str(response[offset + 1 : offset + 1 + response[offset]])
+		result['address'] = response[offset + 1 : offset + 1 + response[offset]]
 		offset = offset + 1 + response[offset]
 		result['chainCode'] = response[offset : offset + 32]
 		return result
@@ -638,6 +649,29 @@ class btchip:
 		apdu.append(len(data))
 		apdu.extend(data)
 		return self.dongle.exchange(bytearray(apdu))
+
+# Functions dedicated to the Bitcoin Vault (BTCV) 3 Keys feature
+
+	def setBTCVPassword(self, password, passwordType):
+		if passwordType != btchip.BTCV_PASSWORD_INSTANT \
+			and passwordType != btchip.BTCV_PASSWORD_RECOVERY:
+			raise BTChipException("Invalid BTCV password type")
+
+		apdu = [ self.BTCHIP_CLA, self.BTCHIP_INS_BTCV_SET_PASSWORD, passwordType, 0x00 ]
+		apdu.append(len(password))
+		apdu.extend(bytearray(password, encoding='utf8'))
+		self.dongle.exchange(bytearray(apdu))
+
+	def setBTCVPasswordUse(self, passwordHash, txType):
+		if txType != btchip.BTCV_TX_ALERT \
+			and txType != btchip.BTCV_TX_INSTANT \
+			and txType != btchip.BTCV_TX_RECOVERY:
+			raise BTChipException("Invalid BTCV transaction type")
+
+		apdu = [ self.BTCHIP_CLA, self.BTCHIP_INS_BTCV_USE_PASSWORD, txType, 0x00 ]
+		apdu.append(len(passwordHash))
+		apdu.extend(bytearray(passwordHash))
+		self.dongle.exchange(bytearray(apdu))
 
 # Functions dedicated to the Java Card interface when no proprietary API is available
 
